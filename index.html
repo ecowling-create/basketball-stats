@@ -2,6 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HHS Basketball Stats</title>
   <style>
     :root{
@@ -12,33 +13,41 @@
       --panel:#111827;
       --text:#ffffff;
     }
-    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:system-ui,Segoe UI,Arial,sans-serif;}
+    *{box-sizing:border-box;}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif;font-size:14px;}
     header{background:linear-gradient(90deg,var(--primary),#052972);padding:10px 14px;border-bottom:4px solid var(--accent);}
-    h1{margin:0;font-size:20px;}
+    h1{margin:0;font-size:18px;font-weight:600;}
     .grid{display:grid;gap:10px;grid-template-columns:260px 1fr;padding:10px;}
+    @media(max-width:768px){.grid{grid-template-columns:1fr;}}
     .panel{background:var(--panel);border:1px solid #1f2937;border-radius:8px;padding:12px;}
     .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
-    input,select,button,textarea{border-radius:6px;border:1px solid #374151;background:#0b1220;color:var(--text);padding:8px;}
-    button{background:#0b1220;border:1px solid #1f2937;cursor:pointer}
-    button.primary{background:var(--primary);border-color:#0d3ea6}
-    button.accent{background:var(--accent);color:#000}
-    button.danger{background:var(--danger)}
-    .scoreboard{display:grid;grid-template-columns:1fr 120px 1fr;align-items:center;gap:10px}
-    .teamCard{background:#0b1220;border:1px solid #1f2937;border-radius:8px;padding:10px}
-    .bigNum{font-size:36px;font-weight:700}
-    .clocks{display:flex;gap:12px;align-items:center;justify-content:center}
-    .clockBox{background:#0b1220;border:1px solid #1f2937;border-radius:8px;padding:6px 10px;text-align:center}
-    .clockLabel{font-size:12px;color:#a8b1c0}
-    .clockValue{font-size:24px;font-weight:700}
-    .tabs button{padding:6px 10px}
-    .sectionTitle{font-weight:600;margin:8px 0}
-    .players{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-    .playerBtn{display:flex;justify-content:space-between}
-    .statBtns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-    .log{height:220px;overflow:auto;border:1px solid #1f2937;border-radius:6px;background:#0b1220;padding:8px}
-    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace}
-    .pill{display:inline-block;padding:2px 6px;border-radius:999px;background:#1f2937;font-size:12px}
-    .statsOutput{height:400px;overflow:auto;border:1px solid #1f2937;border-radius:6px;background:#0b1220;padding:12px}
+    input,select,button,textarea{border-radius:6px;border:1px solid #374151;background:#0b1220;color:var(--text);padding:8px;font-size:14px;font-family:Arial,sans-serif;}
+    button{background:#0b1220;border:1px solid #1f2937;cursor:pointer;}
+    button:hover{background:#1a2332;}
+    button.primary{background:var(--primary);border-color:#0d3ea6;}
+    button.primary:hover{background:#0c3595;}
+    button.accent{background:var(--accent);color:#000;font-weight:600;}
+    button.accent:hover{background:#b89245;}
+    button.danger{background:var(--danger);color:#fff;}
+    button.danger:hover{background:#a0001c;}
+    .scoreboard{display:grid;grid-template-columns:1fr 120px 1fr;align-items:center;gap:10px;}
+    @media(max-width:600px){.scoreboard{grid-template-columns:1fr;}}
+    .teamCard{background:#0b1220;border:1px solid #1f2937;border-radius:8px;padding:10px;}
+    .bigNum{font-size:36px;font-weight:700;}
+    .clocks{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;}
+    .clockBox{background:#0b1220;border:1px solid #1f2937;border-radius:8px;padding:6px 10px;text-align:center;}
+    .clockLabel{font-size:12px;color:#a8b1c0;}
+    .clockValue{font-size:24px;font-weight:700;font-family:monospace;}
+    .tabs button{padding:6px 10px;}
+    .sectionTitle{font-weight:600;margin:8px 0;}
+    .players{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+    .playerBtn{display:flex;justify-content:space-between;width:100%;}
+    .statBtns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+    @media(max-width:600px){.statBtns{grid-template-columns:1fr 1fr;}}
+    .log{height:220px;overflow:auto;border:1px solid #1f2937;border-radius:6px;background:#0b1220;padding:8px;}
+    .mono{font-family:monospace;}
+    .pill{display:inline-block;padding:2px 6px;border-radius:999px;background:#1f2937;font-size:12px;}
+    .statsOutput{height:400px;overflow:auto;border:1px solid #1f2937;border-radius:6px;background:#0b1220;padding:12px;white-space:pre-wrap;}
   </style>
 </head>
 <body>
@@ -64,14 +73,16 @@
               <option value="JV">JV</option>
             </select>
           </label>
+        </div>
+        <div class="row">
           <label>Period:
             <input id="periodMin" type="number" value="8" min="6" max="10" style="width:60px"> min
           </label>
-        </div>
-        <div class="row">
           <label>OT:
             <input id="otMin" type="number" value="4" min="3" max="5" style="width:60px"> min
           </label>
+        </div>
+        <div class="row">
           <label>Shot clock:
             <select id="shotClockSel">
               <option value="35">35s (Arkansas)</option>
@@ -81,24 +92,26 @@
         </div>
         <div class="row">
           <label>Date: <input id="gameDate" type="date"></label>
+        </div>
+        <div class="row">
           <label>Site: <input id="site" type="text" placeholder="Home Gym"></label>
         </div>
 
         <div class="sectionTitle">Teams</div>
         <div class="row">
-          <input id="homeName" placeholder="Home Team" value="Harrison (HHS)">
-          <input id="homeAbbr" placeholder="Abbr" value="HHS" style="width:80px">
+          <input id="homeName" placeholder="Home Team" value="Harrison (HHS)" style="width:150px;">
+          <input id="homeAbbr" placeholder="Abbr" value="HHS" style="width:60px;">
         </div>
         <div class="row">
-          <input id="awayName" placeholder="Away Team">
-          <input id="awayAbbr" placeholder="Abbr" value="OPP" style="width:80px">
+          <input id="awayName" placeholder="Away Team" style="width:150px;">
+          <input id="awayAbbr" placeholder="Abbr" value="OPP" style="width:60px;">
         </div>
 
         <div class="sectionTitle">Rosters (No. Name)</div>
-        <textarea id="homeRoster" rows="5" placeholder="e.g., 2 John Smith&#10;11 Chase Brown"></textarea>
-        <textarea id="awayRoster" rows="5" placeholder="e.g., 5 Alex Miller&#10;22 Jordan Lee"></textarea>
+        <textarea id="homeRoster" rows="5" placeholder="e.g., 2 John Smith&#10;11 Chase Brown" style="width:100%;"></textarea>
+        <textarea id="awayRoster" rows="5" placeholder="e.g., 5 Alex Miller&#10;22 Jordan Lee" style="width:100%;"></textarea>
 
-        <div class="row" style="margin-top:8px">
+        <div class="row" style="margin-top:8px;">
           <button class="primary" id="buildRostersBtn">Build Rosters</button>
           <button id="loadDemoBtn">Load Demo</button>
         </div>
@@ -106,12 +119,12 @@
         <div class="sectionTitle">Set Starters (max 5)</div>
         <div id="starterSelect" class="row"></div>
 
-        <div class="row" style="margin-top:10px">
+        <div class="row" style="margin-top:10px;">
           <button class="accent" id="startGameBtn">Start Game</button>
         </div>
       </div>
 
-      <div id="statsPanel" style="display:none">
+      <div id="statsPanel" style="display:none;">
         <div class="sectionTitle">Copy Stats Below</div>
         <div class="row">
           <button class="primary" id="copyStatsBtn">Copy to Clipboard</button>
@@ -121,7 +134,7 @@
       </div>
     </div>
 
-    <div class="panel" id="gamePanel" style="display:none">
+    <div class="panel" id="gamePanel" style="display:none;">
       <div class="scoreboard">
         <div class="teamCard">
           <div id="homeTeamLabel">HHS</div>
@@ -129,7 +142,7 @@
           <div class="row"><span>Fouls:</span><span id="homeFouls" class="pill">0</span><span id="homeBonus" class="pill">—</span></div>
         </div>
         <div>
-          <div class="row" style="justify-content:center;gap:10px">
+          <div class="row" style="justify-content:center;gap:10px;margin-bottom:10px;">
             <span class="pill" id="periodLabel">Q1</span>
             <button id="advancePeriodBtn">Next Period</button>
             <button id="newOTBtn">Start OT</button>
@@ -138,7 +151,7 @@
             <div class="clockBox">
               <div class="clockLabel">Game Clock</div>
               <div class="clockValue mono" id="gameClock">8:00</div>
-              <div class="row" style="justify-content:center;gap:6px">
+              <div class="row" style="justify-content:center;gap:6px;margin-top:6px;">
                 <button id="startClockBtn">Start</button>
                 <button id="stopClockBtn">Stop</button>
                 <button id="resetClockBtn">Reset</button>
@@ -147,7 +160,7 @@
             <div class="clockBox">
               <div class="clockLabel">Shot Clock</div>
               <div class="clockValue mono" id="shotClock">35</div>
-              <div class="row" style="justify-content:center;gap:6px">
+              <div class="row" style="justify-content:center;gap:6px;margin-top:6px;">
                 <button id="shotStartBtn">Start</button>
                 <button id="shotStopBtn">Stop</button>
                 <button id="shotResetBtn">Reset</button>
@@ -162,12 +175,12 @@
         </div>
       </div>
 
-      <div class="row" style="margin-top:10px">
-        <div style="flex:1">
+      <div class="row" style="margin-top:10px;">
+        <div style="flex:1;">
           <div class="sectionTitle">On Floor — HHS</div>
           <div id="homeOnFloor" class="players"></div>
         </div>
-        <div style="flex:1">
+        <div style="flex:1;">
           <div class="sectionTitle">On Floor — OPP</div>
           <div id="awayOnFloor" class="players"></div>
         </div>
@@ -184,7 +197,7 @@
         <button id="subOutBtn">Sub Out</button>
       </div>
 
-      <div class="statBtns" style="margin-top:8px">
+      <div class="statBtns" style="margin-top:8px;">
         <button class="primary" data-ev="fg2-m">2FG Made</button>
         <button data-ev="fg2-x">2FG Miss</button>
         <button class="primary" data-ev="fg3-m">3FG Made</button>
@@ -201,7 +214,7 @@
         <button data-ev="team-to">Team TO</button>
       </div>
 
-      <div class="sectionTitle">Play‑by‑Play</div>
+      <div class="sectionTitle">Play-by-Play</div>
       <div id="pbp" class="log mono"></div>
     </div>
   </div>
@@ -554,21 +567,4 @@
     function checkBonus(){
       updateTeamFoulsUI();
       const homeB = state.home.foulsQ>=5 ? 'Bonus (2)' : '—';
-      const awayB = state.away.foulsQ>=5 ? 'Bonus (2)' : '—';
-      el('homeBonus').textContent = homeB;
-      el('awayBonus').textContent = awayB;
-    }
-    function updateTeamFoulsUI(){
-      el('homeFouls').textContent = state.home.foulsQ;
-      el('awayFouls').textContent = state.away.foulsQ;
-    }
-
-    function logEvent(text, clock=null){
-      const pr = currentPeriod();
-      pr.events.push({clock: clock||timeStr(), text});
-      const row = `[${pr.label} ${clock||timeStr()}] ${text}`;
-      const div = document.createElement('div'); div.textContent = row;
-      el('pbp').prepend(div);
-    }
-
-    el('copyStatsBtn').onclick = ()
+      const aw
