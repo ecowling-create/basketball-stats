@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>HHS Basketball Stats</title>
+  <style>
+    :root{
+      --primary:#0d3ea6;
+      --accent:#c5a253;
+      --danger:#b00020;
+      --bg:#0f172a;
+      --panel:#111827;
+      --text:#ffffff;
+    }
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:system-ui,Segoe UI,Arial,sans-serif;}
+    header{background:linear-gradient(90deg,var(--primary),#052972);padding:10px 14px;border-bottom:4px solid var(--accent);}
+    h1{margin:0;font-size:20px;}
+    .grid{display:grid;gap:10px;grid-template-columns:260px 1fr;padding:10px;}
+    .panel{background:var(--panel);border:1px solid #1f2937;border-radius:8px;padding:12px;}
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+    input,select,button,textarea{border-radius:6px;border:1px solid #374151;background:#0b1220;color:var(--text);padding:8px;}
+    button{background:#0b1220;border:1px solid #1f2937;cursor:pointer}
+    button.primary{background:var(--primary);border-color:#0d3ea6}
+    button.accent{background:var(--accent);color:#000}
+    button.danger{background:var(--danger)}
+    .scoreboard{display:grid;grid-template-columns:1fr 120px 1fr;align-items:center;gap:10px}
+    .teamCard{background:#0b1220;border:1px solid #1f2937;border-radius:8px;padding:10px}
+    .bigNum{font-size:36px;font-weight:700}
+    .clocks{display:flex;gap:12px;align-items:center;justify-content:center}
+    .clockBox{background:#0b1220;border:1px solid #1f2937;border-radius:8px;padding:6px 10px;text-align:center}
+    .clockLabel{font-size:12px;color:#a8b1c0}
+    .clockValue{font-size:24px;font-weight:700}
+    .tabs button{padding:6px 10px}
+    .sectionTitle{font-weight:600;margin:8px 0}
+    .players{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .playerBtn{display:flex;justify-content:space-between}
+    .statBtns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .log{height:220px;overflow:auto;border:1px solid #1f2937;border-radius:6px;background:#0b1220;padding:8px}
+    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace}
+    .pill{display:inline-block;padding:2px 6px;border-radius:999px;background:#1f2937;font-size:12px}
+    .statsOutput{height:400px;overflow:auto;border:1px solid #1f2937;border-radius:6px;background:#0b1220;padding:12px}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>HHS Basketball Stats — Arkansas NFHS (Bonus-by-Quarter, 35s Shot Clock)</h1>
+  </header>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="tabs row">
+        <button id="tabPregame" class="primary">Pregame</button>
+        <button id="tabGame">Game</button>
+        <button id="tabStats">Stats</button>
+      </div>
+
+      <div id="pregame">
+        <div class="sectionTitle">Game Info</div>
+        <div class="row">
+          <label>Level:
+            <select id="level">
+              <option value="Varsity Boys">Varsity Boys</option>
+              <option value="Varsity Girls">Varsity Girls</option>
+              <option value="JV">JV</option>
+            </select>
+          </label>
+          <label>Period:
+            <input id="periodMin" type="number" value="8" min="6" max="10" style="width:60px"> min
+          </label>
+        </div>
+        <div class="row">
+          <label>OT:
+            <input id="otMin" type="number" value="4" min="3" max="5" style="width:60px"> min
+          </label>
+          <label>Shot clock:
+            <select id="shotClockSel">
+              <option value="35">35s (Arkansas)</option>
+              <option value="Off">Off</option>
+            </select>
+          </label>
+        </div>
+        <div class="row">
+          <label>Date: <input id="gameDate" type="date"></label>
+          <label>Site: <input id="site" type="text" placeholder="Home Gym"></label>
+        </div>
+
+        <div class="sectionTitle">Teams</div>
+        <div class="row">
+          <input id="homeName" placeholder="Home Team" value="Harrison (HHS)">
+          <input id="homeAbbr" placeholder="Abbr" value="HHS" style="width:80px">
+        </div>
+        <div class="row">
+          <input id="awayName" placeholder="Away Team">
+          <input id="awayAbbr" placeholder="Abbr" value="OPP" style="width:80px">
+        </div>
+
+        <div class="sectionTitle">Rosters (No. Name)</div>
+        <textarea id="homeRoster" rows="5" placeholder="e.g., 2 John Smith&#10;11 Chase Brown"></textarea>
+        <textarea id="awayRoster" rows="5" placeholder="e.g., 5 Alex Miller&#10;22 Jordan Lee"></textarea>
+
+        <div class="row" style="margin-top:8px">
+          <button class="primary" id="buildRostersBtn">Build Rosters</button>
+          <button id="loadDemoBtn">Load Demo</button>
+        </div>
+
+        <div class="sectionTitle">Set Starters (max 5)</div>
+        <div id="starterSelect" class="row"></div>
+
+        <div class="row" style="margin-top:10px">
+          <button class="accent" id="startGameBtn">Start Game</button>
+        </div>
+      </div>
+
+      <div id="statsPanel" style="display:none">
+        <div class="sectionTitle">Copy Stats Below</div>
+        <div class="row">
+          <button class="primary" id="copyStatsBtn">Copy to Clipboard</button>
+          <span id="copyStatus" class="pill"></span>
+        </div>
+        <div class="statsOutput mono" id="statsOutput"></div>
+      </div>
+    </div>
+
+    <div class="panel" id="gamePanel" style="display:none">
+      <div class="scoreboard">
+        <div class="teamCard">
+          <div id="homeTeamLabel">HHS</div>
+          <div class="bigNum" id="homeScore">0</div>
+          <div class="row"><span>Fouls:</span><span id="homeFouls" class="pill">0</span><span id="homeBonus" class="pill">—</span></div>
+        </div>
+        <div>
+          <div class="row" style="justify-content:center;gap:10px">
+            <span class="pill" id="periodLabel">Q1</span>
+            <button id="advancePeriodBtn">Next Period</button>
+            <button id="newOTBtn">Start OT</button>
+          </div>
+          <div class="clocks">
+            <div class="clockBox">
+              <div class="clockLabel">Game Clock</div>
+              <div class="clockValue mono" id="gameClock">8:00</div>
+              <div class="row" style="justify-content:center;gap:6px">
+                <button id="startClockBtn">Start</button>
+                <button id="stopClockBtn">Stop</button>
+                <button id="resetClockBtn">Reset</button>
+              </div>
+            </div>
+            <div class="clockBox">
+              <div class="clockLabel">Shot Clock</div>
+              <div class="clockValue mono" id="shotClock">35</div>
+              <div class="row" style="justify-content:center;gap:6px">
+                <button id="shotStartBtn">Start</button>
+                <button id="shotStopBtn">Stop</button>
+                <button id="shotResetBtn">Reset</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="teamCard">
+          <div id="awayTeamLabel">OPP</div>
+          <div class="bigNum" id="awayScore">0</div>
+          <div class="row"><span>Fouls:</span><span id="awayFouls" class="pill">0</span><span id="awayBonus" class="pill">—</span></div>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <div style="flex:1">
+          <div class="sectionTitle">On Floor — HHS</div>
+          <div id="homeOnFloor" class="players"></div>
+        </div>
+        <div style="flex:1">
+          <div class="sectionTitle">On Floor — OPP</div>
+          <div id="awayOnFloor" class="players"></div>
+        </div>
+      </div>
+
+      <div class="sectionTitle">Stat Entry</div>
+      <div class="row">
+        <select id="activeTeamSel">
+          <option value="home">HHS</option>
+          <option value="away">OPP</option>
+        </select>
+        <select id="activePlayerSel"></select>
+        <button id="subInBtn">Sub In</button>
+        <button id="subOutBtn">Sub Out</button>
+      </div>
+
+      <div class="statBtns" style="margin-top:8px">
+        <button class="primary" data-ev="fg2-m">2FG Made</button>
+        <button data-ev="fg2-x">2FG Miss</button>
+        <button class="primary" data-ev="fg3-m">3FG Made</button>
+        <button data-ev="fg3-x">3FG Miss</button>
+        <button class="accent" data-ev="ft-m">FT Made</button>
+        <button data-ev="ft-x">FT Miss</button>
+        <button data-ev="oreb">O-Reb</button>
+        <button data-ev="dreb">D-Reb</button>
+        <button data-ev="ast">Assist</button>
+        <button data-ev="stl">Steal</button>
+        <button data-ev="blk">Block</button>
+        <button data-ev="to">Turnover</button>
+        <button class="danger" data-ev="pf">Foul</button>
+        <button data-ev="team-to">Team TO</button>
+      </div>
+
+      <div class="sectionTitle">Play‑by‑Play</div>
+      <div id="pbp" class="log mono"></div>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      meta: { level: 'Varsity Boys', periodMin: 8, otMin: 4, shotClock: 35, date: '', site: '' },
+      home: teamTemplate('HHS', 'Harrison (HHS)'),
+      away: teamTemplate('OPP', ''),
+      periods: [],
+      curPeriod: 1,
+      isOT: false,
+      clock: { running: false, secs: 8*60 },
+      shot: { running: false, secs: 35 },
+    };
+
+    function teamTemplate(abbr, name){
+      return {
+        name: name, abbr: abbr,
+        players: [], onFloor: [], foulsQ: 0,
+        totals: { fgm2:0,fga2:0,fgm3:0,fga3:0,ftm:0,fta:0,oreb:0,dreb:0,ast:0,stl:0,blk:0,to:0,pf:0,points:0 }
+      };
+    }
+
+    function initPeriods(){
+      state.periods = [];
+      for(let i=1;i<=4;i++){
+        state.periods.push({number:i,label:'Q'+i,homePoints:0,awayPoints:0,events:[]});
+      }
+    }
+
+    const el = (id)=>document.getElementById(id);
+    const tabPregame = el('tabPregame'), tabGame = el('tabGame'), tabStats = el('tabStats');
+    const pregame = el('pregame'), gamePanel=el('gamePanel'), statsPanel=el('statsPanel');
+
+    tabPregame.onclick = ()=>{pregame.style.display='block';gamePanel.style.display='none';statsPanel.style.display='none';};
+    tabGame.onclick    = ()=>{pregame.style.display='none';gamePanel.style.display='block';statsPanel.style.display='none';};
+    tabStats.onclick   = ()=>{pregame.style.display='none';gamePanel.style.display='none';statsPanel.style.display='block';renderStats();};
+
+    initPeriods();
+    renderScoreboard();
+
+    el('buildRostersBtn').onclick = buildRosters;
+    el('loadDemoBtn').onclick = loadDemo;
+    el('startGameBtn').onclick = startGame;
+
+    function buildRosters(){
+      state.meta.level = el('level').value;
+      state.meta.periodMin = parseInt(el('periodMin').value||8,10);
+      state.meta.otMin = parseInt(el('otMin').value||4,10);
+      state.meta.shotClock = el('shotClockSel').value==='Off' ? null : parseInt(el('shotClockSel').value,10);
+      state.meta.date = el('gameDate').value;
+      state.meta.site = el('site').value;
+
+      state.home.name = el('homeName').value || 'Harrison (HHS)';
+      state.home.abbr = el('homeAbbr').value || 'HHS';
+      state.away.name = el('awayName').value || 'Opponent';
+      state.away.abbr = el('awayAbbr').value || 'OPP';
+
+      state.home.players = parseRoster(el('homeRoster').value);
+      state.away.players = parseRoster(el('awayRoster').value);
+
+      const wrap = el('starterSelect'); wrap.innerHTML='';
+      const mkSel = (lab, list, teamKey)=>{
+        const sel = document.createElement('select');
+        sel.innerHTML = '<option value="">'+lab+'</option>' + list.map(p=>`<option value="${p.num}">${p.num} ${p.name}</option>`).join('');
+        sel.onchange = ()=>{
+          const num = sel.value;
+          if(!num) return;
+          const team = state[teamKey];
+          const already = team.onFloor.find(n=>n===num);
+          if(already) return;
+          if(team.onFloor.length>=5){ alert('Max 5 on floor for '+team.abbr); sel.value=''; return; }
+          team.onFloor.push(num);
+          renderOnFloor();
+        };
+        return sel;
+      };
+      wrap.appendChild(mkSel('HHS starter', state.home.players, 'home'));
+      wrap.appendChild(mkSel('OPP starter', state.away.players, 'away'));
+
+      alert('Rosters built. Select 5 starters per team, then Start Game.');
+    }
+
+    function parseRoster(txt){
+      return txt.split(/\n/).map(s=>s.trim()).filter(Boolean).map(line=>{
+        const m = line.match(/^(\d+)\s+(.*)$/);
+        const num = m ? m[1] : '';
+        const name = m ? m[2] : line;
+        return {
+          num, name,
+          minutes:0, fgm2:0,fga2:0,fgm3:0,fga3:0,ftm:0,fta:0,oreb:0,dreb:0,ast:0,stl:0,blk:0,to:0,pf:0,points:0
+        };
+      });
+    }
+
+    function loadDemo(){
+      el('homeRoster').value = '1 Avery West\n2 Noah Green\n3 Eli Parker\n4 Mason King\n5 Luke Davis\n10 Cole Turner\n11 Grant Hall\n12 Wyatt Reed';
+      el('awayRoster').value = '2 J. Smith\n5 A. Johnson\n11 R. Lee\n15 C. Brown\n23 T. Wilson\n24 D. Moore\n30 P. Young';
+      alert('Demo rosters loaded. Click Build Rosters.');
+    }
+
+    function startGame(){
+      if(state.home.onFloor.length!==5 || state.away.onFloor.length!==5){
+        alert('Please select 5 starters for each team.');
+        return;
+      }
+      state.curPeriod = 1; state.isOT = false;
+      initPeriods();
+      state.clock.secs = state.meta.periodMin*60;
+      state.shot.secs = state.meta.shotClock || 0;
+      renderScoreboard();
+      renderOnFloor();
+      populateActivePlayerSel();
+      tabGame.click();
+      logEvent('Tip-off', timeStr());
+    }
+
+    let gameTimer = null, shotTimer = null;
+
+    el('startClockBtn').onclick = ()=>{
+      if(gameTimer) return;
+      state.clock.running = true;
+      gameTimer = setInterval(()=>{
+        if(state.clock.secs>0){ state.clock.secs--; updateGameClockUI(); tickMinutesOnFloor(1); }
+        if(state.clock.secs===0){ stopClock(); logEvent('End of period', '00:00'); }
+      }, 1000);
+    };
+    el('stopClockBtn').onclick = ()=> stopClock();
+    el('resetClockBtn').onclick = ()=>{ state.clock.secs = (state.isOT?state.meta.otMin:state.meta.periodMin)*60; updateGameClockUI(); };
+
+    function stopClock(){
+      state.clock.running=false;
+      if(gameTimer){ clearInterval(gameTimer); gameTimer=null; }
+    }
+    function updateGameClockUI(){ el('gameClock').textContent = timeStr(); }
+    function timeStr(){
+      const m=Math.floor(state.clock.secs/60), s=state.clock.secs%60;
+      return `${m}:${String(s).padStart(2,'0')}`;
+    }
+    function tickMinutesOnFloor(secs){
+      const inc = secs/60;
+      ['home','away'].forEach(k=>{
+        const team = state[k];
+        team.onFloor.forEach(num=>{
+          const p = team.players.find(pl=>pl.num===num);
+          if(p) p.minutes += inc;
+        });
+      });
+    }
+
+    el('shotStartBtn').onclick = ()=>{
+      if(!state.meta.shotClock){ return; }
+      if(shotTimer) return;
+      state.shot.running = true;
+      shotTimer = setInterval(()=>{
+        if(state.shot.secs>0){ state.shot.secs--; el('shotClock').textContent = state.shot.secs; }
+        if(state.shot.secs===0){ stopShot(); logEvent('Shot clock violation'); changePossession(); }
+      }, 1000);
+    };
+    el('shotStopBtn').onclick = ()=> stopShot();
+    el('shotResetBtn').onclick = ()=> resetShot();
+
+    function stopShot(){ state.shot.running=false; if(shotTimer){ clearInterval(shotTimer); shotTimer=null; } }
+    function resetShot(){ if(!state.meta.shotClock) return; state.shot.secs = state.meta.shotClock; el('shotClock').textContent = state.shot.secs; }
+
+    el('advancePeriodBtn').onclick = ()=>{
+      stopClock();
+      stopShot();
+      state.home.foulsQ = 0; state.away.foulsQ = 0;
+      updateTeamFoulsUI();
+      if(state.curPeriod<4){ state.curPeriod++; state.isOT=false; }
+      else { alert('Use Start OT to begin overtime.'); return; }
+      state.clock.secs = state.meta.periodMin*60;
+      resetShot();
+      renderScoreboard();
+      logEvent('Start of '+periodLabel());
+    };
+    el('newOTBtn').onclick = ()=>{
+      stopClock(); stopShot();
+      state.isOT = true;
+      state.curPeriod = state.periods.length+1;
+      state.periods.push({number:state.curPeriod,label:'OT',homePoints:0,awayPoints:0,events:[]});
+      state.clock.secs = state.meta.otMin*60;
+      resetShot();
+      renderScoreboard();
+      logEvent('Start of OT');
+    };
+
+    function periodLabel(){ return state.isOT ? 'OT' : 'Q'+state.curPeriod; }
+
+    function renderScoreboard(){
+      el('homeTeamLabel').textContent = state.home.abbr;
+      el('awayTeamLabel').textContent = state.away.abbr;
+      el('homeScore').textContent = state.home.totals.points;
+      el('awayScore').textContent = state.away.totals.points;
+      el('periodLabel').textContent = periodLabel();
+      updateGameClockUI();
+      if(state.meta.shotClock){ el('shotClock').textContent = state.shot.secs; }
+      updateTeamFoulsUI();
+    }
+
+    function renderOnFloor(){
+      const mkPlayerButton = (teamKey, pl)=>{
+        const b = document.createElement('button');
+        b.className='playerBtn';
+        b.textContent = `${pl.num} ${pl.name}`;
+        b.onclick = ()=>{
+          el('activeTeamSel').value = teamKey;
+          populateActivePlayerSel();
+          el('activePlayerSel').value = pl.num;
+        };
+        return b;
+      };
+      const homeWrap = el('homeOnFloor'); homeWrap.innerHTML='';
+      state.home.onFloor.forEach(num=>{
+        const pl = state.home.players.find(p=>p.num===num);
+        if(pl) homeWrap.appendChild(mkPlayerButton('home', pl));
+      });
+      const awayWrap = el('awayOnFloor'); awayWrap.innerHTML='';
+      state.away.onFloor.forEach(num=>{
+        const pl = state.away.players.find(p=>p.num===num);
+        if(pl) awayWrap.appendChild(mkPlayerButton('away', pl));
+      });
+    }
+
+    function populateActivePlayerSel(){
+      const teamKey = el('activeTeamSel').value;
+      const list = state[teamKey].onFloor.map(n=>state[teamKey].players.find(p=>p.num===n)).filter(Boolean);
+      const sel = el('activePlayerSel'); sel.innerHTML = list.map(p=>`<option value="${p.num}">${p.num} ${p.name}</option>`).join('');
+    }
+    el('activeTeamSel').onchange = populateActivePlayerSel;
+
+    el('subInBtn').onclick = ()=>{
+      const teamKey = el('activeTeamSel').value;
+      const team = state[teamKey];
+      const num = prompt(`Sub IN number for ${team.abbr}:`);
+      if(!num) return;
+      if(team.onFloor.length>=5){ alert('Already 5 on floor. Sub OUT first.'); return; }
+      if(!team.players.find(p=>p.num===num)){ alert('Number not on roster.'); return; }
+      if(team.onFloor.includes(num)){ alert('Already on floor.'); return; }
+      team.onFloor.push(num);
+      renderOnFloor(); populateActivePlayerSel();
+      logEvent(`${team.abbr} sub in #${num}`, timeStr());
+    };
+    el('subOutBtn').onclick = ()=>{
+      const teamKey = el('activeTeamSel').value;
+      const team = state[teamKey];
+      const num = el('activePlayerSel').value;
+      const idx = team.onFloor.indexOf(num);
+      if(idx>-1){ team.onFloor.splice(idx,1); renderOnFloor(); populateActivePlayerSel(); logEvent(`${team.abbr} sub out #${num}`, timeStr()); }
+    };
+
+    document.querySelectorAll('.statBtns button').forEach(btn=>{
+      btn.onclick = ()=> applyEvent(btn.getAttribute('data-ev'));
+    });
+
+    function applyEvent(ev){
+      const teamKey = el('activeTeamSel').value;
+      const team = state[teamKey];
+      const num = el('activePlayerSel').value;
+      const player = team.players.find(p=>p.num===num);
+      if(!player){ alert('Pick a player on floor.'); return; }
+
+      switch(ev){
+        case 'fg2-m':
+          player.fgm2++; player.fga2++; player.points+=2; team.totals.fgm2++; team.totals.fga2++; team.totals.points+=2;
+          periodPoints(teamKey,2);
+          resetShot();
+          logEvent(`${team.abbr} #${num} 2FG MADE`, timeStr());
+          break;
+        case 'fg2-x':
+          player.fga2++; team.totals.fga2++;
+          resetShot();
+          logEvent(`${team.abbr} #${num} 2FG MISSED`, timeStr());
+          break;
+        case 'fg3-m':
+          player.fgm3++; player.fga3++; player.points+=3; team.totals.fgm3++; team.totals.fga3++; team.totals.points+=3;
+          periodPoints(teamKey,3);
+          resetShot();
+          logEvent(`${team.abbr} #${num} 3FG MADE`, timeStr());
+          break;
+        case 'fg3-x':
+          player.fga3++; team.totals.fga3++;
+          resetShot();
+          logEvent(`${team.abbr} #${num} 3FG MISSED`, timeStr());
+          break;
+        case 'ft-m':
+          player.ftm++; player.fta++; player.points+=1; team.totals.ftm++; team.totals.fta++; team.totals.points+=1;
+          periodPoints(teamKey,1);
+          logEvent(`${team.abbr} #${num} FT MADE`, timeStr());
+          break;
+        case 'ft-x':
+          player.fta++; team.totals.fta++;
+          logEvent(`${team.abbr} #${num} FT MISSED`, timeStr());
+          break;
+        case 'oreb':
+          player.oreb++; team.totals.oreb++;
+          logEvent(`${team.abbr} #${num} OFF REB`, timeStr());
+          break;
+        case 'dreb':
+          player.dreb++; team.totals.dreb++;
+          logEvent(`${team.abbr} #${num} DEF REB`, timeStr());
+          break;
+        case 'ast':
+          player.ast++; team.totals.ast++;
+          logEvent(`${team.abbr} #${num} ASSIST`, timeStr());
+          break;
+        case 'stl':
+          player.stl++; team.totals.stl++;
+          logEvent(`${team.abbr} #${num} STEAL`, timeStr());
+          changePossession();
+          break;
+        case 'blk':
+          player.blk++; team.totals.blk++;
+          logEvent(`${team.abbr} #${num} BLOCK`, timeStr());
+          break;
+        case 'to':
+          player.to++; team.totals.to++;
+          logEvent(`${team.abbr} #${num} TURNOVER`, timeStr());
+          changePossession();
+          break;
+        case 'team-to':
+          team.totals.to++;
+          logEvent(`${team.abbr} TEAM TURNOVER`, timeStr());
+          changePossession();
+          break;
+        case 'pf':
+          player.pf++; team.totals.pf++; team.foulsQ++;
+          logEvent(`${team.abbr} #${num} FOUL (${team.foulsQ})`, timeStr());
+          checkBonus();
+          break;
+      }
+      renderScoreboard();
+    }
+
+    function periodPoints(teamKey, pts){
+      const pr = currentPeriod();
+      if(teamKey==='home'){ pr.homePoints += pts; }
+      else { pr.awayPoints += pts; }
+    }
+    function currentPeriod(){
+      if(state.isOT){ return state.periods[state.periods.length-1]; }
+      return state.periods[state.curPeriod-1];
+    }
+    function changePossession(){
+      resetShot();
+    }
+
+    function checkBonus(){
+      updateTeamFoulsUI();
+      const homeB = state.home.foulsQ>=5 ? 'Bonus (2)' : '—';
+      const awayB = state.away.foulsQ>=5 ? 'Bonus (2)' : '—';
+      el('homeBonus').textContent = homeB;
+      el('awayBonus').textContent = awayB;
+    }
+    function updateTeamFoulsUI(){
+      el('homeFouls').textContent = state.home.foulsQ;
+      el('awayFouls').textContent = state.away.foulsQ;
+    }
+
+    function logEvent(text, clock=null){
+      const pr = currentPeriod();
+      pr.events.push({clock: clock||timeStr(), text});
+      const row = `[${pr.label} ${clock||timeStr()}] ${text}`;
+      const div = document.createElement('div'); div.textContent = row;
+      el('pbp').prepend(div);
+    }
+
+    el('copyStatsBtn').onclick = ()
